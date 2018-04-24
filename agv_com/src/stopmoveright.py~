@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+import rospy
+import roslib
+import socket
+import requests
+from std_msgs.msg import String
+import time
+import numpy
+import json
+
+def stopmoveright():
+    resp = requests.delete('http://192.168.12.112:8080/v1.0.0/mission_queue')
+    task ={"mission" : "3910b18b-1d5c-11e8-b829-f44d306f3ce3"} 
+    resp = requests.post('http://192.168.12.112:8080/v1.0.0/mission_queue', json=task)
+    
+
+
+if __name__ == '__main__':
+    try:
+        stopmoveright()
+        
+    except rospy.ROSInterruptException:
+        pass

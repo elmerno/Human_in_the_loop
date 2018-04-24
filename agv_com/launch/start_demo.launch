@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="myo_raw" pkg="ros_myo" type="myo-rawNode.py" output="screen"></node>
+    <!--node name="ros_timer" pkg="myo_nodes" type="timeNode.py" output="screen"></node-->
+</launch>

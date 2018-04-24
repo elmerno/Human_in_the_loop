@@ -1,0 +1,192 @@
+#!/usr/bin/env python
+
+import rospy
+import roslib
+import socket
+import requests
+from std_msgs.msg import String
+import time
+import numpy
+import json
+from sensor_msgs.msg import JointState
+stop = False
+pos=[1.0,1.0,1.0,1.0,1.0,1.0]
+velocity=0.1
+tag="NO TAG"
+
+def checkCom(data):
+    global stop, tag
+    pub = rospy.Publisher('ur_driver/URScript', String, queue_size=10)
+    moveleft = {"mission" : "3910b18b-1d5c-11e8-b829-f44d306f3ce3"}
+    moveright = {"mission" : "20c999e2-1622-11e8-aeb8-f44d306f3ce3"}
+    mission_queue = 'http://192.168.1.112:8080/v1.0.0/mission_queue'
+    register5='http://192.168.1.112:8080/v1.0.0/registers/5'
+    register6='http://192.168.1.112:8080/v1.0.0/registers/6'
+    datan = "%s" % data
+    r = rospy.Rate(1)
+    if "STOP" in datan and "TAG ID" in tag:
+        rospy.loginfo("Robot is stopping")
+        resp = requests.delete(mission_queue)
+        pub.publish("stopj(2)")
+        stop = True
+        rospy.loginfo("Robot is stopping")
+    
+    elif "CONTINUE" in datan and "TAG ID" in tag:
+        # rospy.loginfo("Robot is continuing")
+        # resp = requests.delete(mission_queue)
+        stop = False
+    
+    elif "MOVE_LEFT" in datan and "TAG ID" in tag:
+        rospy.loginfo("Robot is moving left")
+        resp = requests.delete(mission_queue)
+        pub.publish("stopj(2)")
+        stop = True
+        r.sleep()
+        resp = requests.post(mission_queue, json=moveleft)
+    
+    elif "MOVE_RIGHT" in datan and "TAG ID" in tag:
+        rospy.loginfo("Robot is moving right")
+        resp = requests.delete(mission_queue)
+        pub.publish("stopj(2)")
+        stop = True
+        r.sleep()
+        resp = requests.post(mission_queue, json=moveright)
+     
+def position(current_pos):
+    global pos
+    pos=current_pos.position
+        
+def correctPos(goal_pos):
+    global pos
+    for x in range(0,6):
+        if(abs(pos[x]-goal_pos[x])<0.001):
+            if(x==5):
+                return True
+                rospy.loginfo("True")
+        else:
+            return False
+        
+def speed(data):
+   global velocity 
+   data = "%s" % data
+   eg2=data.split(" ")
+   data=eg2[1]
+   velocity=data
+   
+def tagDetector(datan):
+    global tag
+    data = "%s" % datan
+    tagdata = data.split("data: ")
+    tag = tagdata[1]
+
+
+def agvloop(): 
+    global stop, velocity, tag
+    rospy.loginfo("AGV to position 1")
+    rospy.init_node("AGV_loop", anonymous=False)
+    rospy.Subscriber("agv_com", String, checkCom)
+    rospy.Subscriber("robAsisst/velocity", String, speed)
+    rospy.Subscriber("joint_states", JointState, position)
+    rospy.Subscriber("robAssist/tagDetector", String, tagDetector)
+    pub = rospy.Publisher('ur_driver/URScript', String, queue_size=10)
+    mission_queue = 'http://192.168.1.112:8080/v1.0.0/mission_queue'
+    registerpos1='http://192.168.1.112:8080/v1.0.0/registers/1'
+    registerpos2='http://192.168.1.112:8080/v1.0.0/registers/2'
+    movepos1 = {"mission" : "ba24db22-22de-11e8-ad87-f44d306f3ce3"}
+    movepos2 = {"mission" : "f5486aa1-22de-11e8-ad87-f44d306f3ce3"}
+    move_1="movej([7.792982353834741E-15, -1.5707963267948983, 0.0, -1.5707963267948966, 2.4148088630737306E-18, 2.0913969723046172E-18], a=1.3962634015954636, v=%s)" % velocity
+    pos_1=[7.792982353834741E-15, -1.5707963267948983, 0.0, -1.5707963267948966, 2.4148088630737306E-18, 2.0913969723046172E-18]
+    move_2="movej([7.792982353834741E-15, -1.5707963267948983, 0.0, -1.5707963267948966, -0.27919999999999945, 0.05493542724666245], a=1.3962634015954636, v=%s)" % velocity
+    pos_2=[7.792982353834741E-15, -1.5707963267948983, 0.0, -1.5707963267948966, -0.27919999999999945, 0.05493542724666245]
+    move_3="movej([-1.5893514963554116, -2.4591132234341977, -1.4866896088162154, -0.7920197419969579, 1.5953902293395572, -0.01965157422308561], a=1.3962634015954636, v=% s)" % velocity
+    pos_3=[-1.5893514963554116, -2.4591132234341977, -1.4866896088162154, -0.7920197419969579, 1.5953902293395572, -0.01965157422308561]
+    move_4="movej([-1.5830646929376062, -1.5707963267948966, 0.0, -1.5707963267948966, 6.4050765537497964E-18, 0.0], a=1.3962634015954636, v=% s)" % velocity
+    pos_4=[-1.5830646929376062, -1.5707963267948966, 0.0, -1.5707963267948966, 6.4050765537497964E-18, 0.0]
+    move_5="movej([-1.5830646928920755, -0.9038935365266632, 1.5951369823723027, -1.819683720112998, 4.693264910464599, -0.4384449910357624], a=1.3962634015954636, v=% s)" % velocity
+    pos_5=[-1.5830646928920755, -0.9038935365266632, 1.5951369823723027, -1.819683720112998, 4.693264910464599, -0.4384449910357624]
+    resp = requests.post(registerpos1, json={"value" : "0"})
+    resp = requests.post(registerpos2, json={"value" : "0"}) 
+    rate = rospy.Rate(0.5)
+    
+      
+    while not rospy.is_shutdown():
+        #AGV to position1
+        rospy.loginfo("AGV to position 1")
+        if not stop:
+            resp = requests.post(mission_queue, json=movepos1)
+        while not requests.get(registerpos1).json() == {u'id': 1, u'value': 1.0} and not rospy.is_shutdown():
+            if stop:
+                while stop and not rospy.is_shutdown():
+                    pass
+                rospy.loginfo("AGV continuing to position 1")
+                resp = requests.post(mission_queue, json=movepos1)
+        resp = requests.post(registerpos1, json={"value" : "0"})
+        
+        #UR to position3
+        rospy.loginfo("UR going down")
+        if not stop:
+            pub.publish(move_3)
+        while not correctPos(pos_3) and not rospy.is_shutdown():
+            if stop:
+                while stop and not rospy.is_shutdown():
+                    pass
+                rospy.loginfo("UR continuing to position 3")
+                pub.publish(move_3)
+        
+        #UR to position 4
+        rospy.loginfo("UR going up")
+        if not stop:
+            pub.publish(move_4)
+        while not correctPos(pos_4) and not rospy.is_shutdown():
+            if stop:
+                while stop and not rospy.is_shutdown():
+                    pass
+                rospy.loginfo("UR continuing to position 4")
+                pub.publish(move_4)
+        
+        #AGV to position2
+        rospy.loginfo("AGV to position 2")
+        if not stop:
+            resp = requests.post(mission_queue, json=movepos2)
+        while not requests.get(registerpos2).json() == {u'id': 2, u'value': 1.0} and not rospy.is_shutdown():
+            if stop:
+                while stop and not rospy.is_shutdown():
+                    pass
+                rospy.loginfo("AGV continuing to position 2")
+                resp = requests.post(mission_queue, json=movepos2)
+        resp = requests.post(registerpos2, json={"value" : "0"})
+        
+        
+        #UR to position 5
+        rospy.loginfo("UR going down")
+        if not stop:
+            pub.publish(move_5)
+        while not correctPos(pos_5) and not rospy.is_shutdown():
+            if stop:
+                while stop and not rospy.is_shutdown():
+                    pass
+                rospy.loginfo("UR continuing to position 5")
+                pub.publish(move_5)
+        
+        #UR to position 4
+        rospy.loginfo("UR going up")
+        if not stop:
+            pub.publish(move_4)
+        while not correctPos(pos_4) and not rospy.is_shutdown():
+            if stop:
+                while stop and not rospy.is_shutdown():
+                    pass
+                rospy.loginfo("UR continuing to position 4")
+                pub.publish(move_4)
+        
+        
+    resp = requests.delete('http://192.168.1.112:8080/v1.0.0/mission_queue')
+    pub.publish("stopj(2)")
+
+
+if __name__ == '__main__':
+    try:
+        agvloop()
+        
+    except rospy.ROSInterruptException:
+        pass
