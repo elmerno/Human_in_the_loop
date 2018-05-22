@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="side_checker" pkg="myo_nodes" type="check_for_side.py"></node>
+    <node name="continue_checker" pkg="myo_nodes" type="check_for_continue2.py"></node>
+    <node name="stop_checker" pkg="myo_nodes" type="myo_chatter.py"></node>
+    <node name="speed_control" pkg="myo_nodes" type="speed_control.py"></node>
+    <node name="tag_detector" pkg="april_reader" type="april_reader.py"></node>
+    <include file="$(find  video_stream_opencv)/launch/aprilcam_webcam.launch"></include>
+    <include file="$(find  apriltags_ros)/launch/aprilcam.launch"></include>
+    <include file="$(find  ur_modern_driver)/launch/ur10_bringup.launch"></include>
+</launch>

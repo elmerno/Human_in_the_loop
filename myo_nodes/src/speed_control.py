@@ -4,25 +4,26 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Vector3
 origindeg = 0
 currentdeg = 0
-velocity = 0.1
+velocity = 0.5
 lastGest = "REST"
 
 def updateDef(message):
     global velocity
-    pub = rospy.Publisher("robAsisst/velocity", String, queue_size=100)
+    pub = rospy.Publisher("robAssist/velocity", String, queue_size=100)
     global currentdeg
     global lastGest
     currentdeg = message.z
-    if lastGest == "FIST":
+    verticaldeg = message.y
+    if lastGest == "FIST" and verticaldeg<10 and verticaldeg >-10:
         diff = currentdeg - origindeg
         rospy.loginfo("velocity: %s" % velocity)
         if(diff>20):
-            if(velocity<0.3):
-                velocity=velocity+0.01
+            if(velocity<1):
+                velocity=velocity+0.005
         elif(diff<-20):
-            if(velocity>0.1):
-                velocity=velocity-0.01
-        pub.publish("%d" % velocity)
+            if(velocity>=0.01):
+                velocity=velocity-0.005
+        pub.publish("%f" % velocity)
 
 def sendCom2(datan):
     data = "%s" % datan
@@ -35,7 +36,7 @@ def sendCom2(datan):
         lastGest = "REST"
 
 def robCon():
-    rospy.init_node('robot_controller', anonymous=True)
+    rospy.init_node('speed_control', anonymous=True)
     rospy.Subscriber("myo_raw/myo_gest_str", String, sendCom2)
     rospy.Subscriber("myo_raw/myo_ori_deg", Vector3, updateDef)
     rospy.spin()

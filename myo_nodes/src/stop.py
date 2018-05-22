@@ -8,7 +8,7 @@ def updateDef(message):
     global deg 
     robotpub = rospy.Publisher("agv_com", String, queue_size=100)
     deg = message.y
-    if deg < -70:
+    if deg < -50:
         robotpub.publish("STOP")
         rospy.loginfo("Robot is stopping")
 

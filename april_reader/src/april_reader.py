@@ -16,7 +16,7 @@ def tagDetected(data):
         
 
 def aprilReader():
-    rospy.init_node("Tagdetector", anonymous=False)
+    rospy.init_node("tag_detector", anonymous=False)
     rospy.Subscriber('/tag_detections', AprilTagDetectionArray, tagDetected)
     rospy.spin()
 

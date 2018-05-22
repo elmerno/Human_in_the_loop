@@ -6,7 +6,7 @@ from apriltags_ros.msg import AprilTagDetectionArray
 
 def tagDetected(data):
     datan = "%s" % data
-    pub = rospy.Publisher('robAssist/tagDetected', String, queue_size=10)
+    pub = rospy.Publisher('robAssist/tagDetector', String, queue_size=10)
     try:
         det = datan.split("id: ")[1].split("\n")[0]
         rospy.loginfo("TAG ID %s" % det)
